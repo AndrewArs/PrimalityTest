@@ -1,0 +1,13 @@
+﻿<Window x:Class="PrimalityTest.Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="257.895" Width="373.684">
+    <Grid>
+        <Label Content="Input your number here:" HorizontalAlignment="Left" Margin="37,24,0,0" VerticalAlignment="Top" Width="145"/>
+        <TextBox x:Name="NumberInput" HorizontalAlignment="Left" Height="81" Margin="37,55,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="286"/>
+        <Button x:Name="AnalysButton" Content="Analys" HorizontalAlignment="Left" Margin="84,171,0,0" VerticalAlignment="Top" Width="193"/>
+    </Grid>
+</Window>

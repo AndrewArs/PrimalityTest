@@ -4,7 +4,10 @@ using PrimalityTest.Core.PrimalitTests.ProbabilisticTests;
 using PrimalityTest.Wpf.Enums;
 using PrimalityTest.Wpf.Models;
 using System;
+using System.ComponentModel;
 using System.Numerics;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace PrimalityTest.Wpf
@@ -12,84 +15,121 @@ namespace PrimalityTest.Wpf
     /// <summary>
     /// Логика взаимодействия для PrimalityTestChoose.xaml
     /// </summary>
-    public partial class PrimalityTestChoose : Window
+    public partial class PrimalityTestChoose
     {
-        private Options options;
-        private BigInteger _number;
+        private Options _options;
+        private readonly BigInteger _number;
+        private readonly CancellationTokenSource _token;
 
         public PrimalityTestChoose(NumberState numberState, BigInteger number)
         {
             InitializeComponent();
 
             _number = number;
-            options = new Options();
+            _token = new CancellationTokenSource();
+            _options = new Options();
             Init(numberState);
 
-            DataContext = options;
+            DataContext = _options;
 
             TestButton.Click += TestButton_Click;
         }
 
-        private void TestButton_Click(object sender, RoutedEventArgs e)
+        private async void TestButton_Click(object sender, RoutedEventArgs e)
         {
+            try
+            {
+                await Computations();
+            }
+            catch (OperationCanceledException)
+            {
+                // ignore
+            }
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            _token.Cancel();
+        }
+
+        private async Task Computations()
+        {
+            Busy.Visibility = Visibility.Visible;
+
             PrimeNumberState result;
 
-            switch (options.Type)
+            var token = _token.Token;
+
+            switch (_options.Type)
             {
                 case PrimalityTestType.Aks:
-                    result = AKSTest.IsPrime(_number);
+                    result = await Task.Run(() => AksTest.IsPrime(_number, token), token);
                     break;
                 case PrimalityTestType.Fermat:
                     {
                         var k = GetNumberOfIterations();
                         if (k == -1)
                         {
+
+                            Busy.Visibility = Visibility.Hidden;
                             return;
                         }
 
-                        result = FermatTest.IsPrime(_number, k);
+                        result = await FermatTest.IsPrime(_number, k, token);
                     }
                     break;
                 case PrimalityTestType.LucasLehmer:
-                    result = LucasLehmerTest.IsPrime(_number);
+                    result = await LucasLehmerTest.IsPrime(_number, token);
                     break;
                 case PrimalityTestType.Pepin:
-                    result = PepinTest.IsPrime(_number);
+                    result = await Task.Run(() => PepinTest.IsPrime(_number), token);
                     break;
                 case PrimalityTestType.RabinMiller:
                     {
                         var k = GetNumberOfIterations();
                         if (k == -1)
                         {
+
+                            Busy.Visibility = Visibility.Hidden;
                             return;
                         }
 
-                        result = RabinMiller.IsPrime(_number, k);
+                        result = await RabinMiller.IsPrime(_number, k, token);
                     }
                     break;
                 case PrimalityTestType.SolovayStrassen:
                     {
-                        if (!long.TryParse(_number.ToString(), out long num))
+                        if (!long.TryParse(_number.ToString(), out var num))
                         {
-                            MessageBox.Show("This number too big to use this method./nPlease select another primality test.",
+                            MessageBox.Show("This number too big to use this method.\nPlease select another primality test.",
                                 "Result", MessageBoxButton.OK);
 
+
+                            Busy.Visibility = Visibility.Hidden;
                             return;
                         }
 
                         var k = GetNumberOfIterations();
                         if (k == -1)
                         {
+
+                            Busy.Visibility = Visibility.Hidden;
                             return;
                         }
 
-                        result = SolovayStrassen.IsPrime(num, k);
+                        result = await SolovayStrassen.IsPrime(num, k, token);
                         break;
                     }
-                default: return;
+                default:
+                    {
+                        Busy.Visibility = Visibility.Hidden;
+                        return;
+                    }
             }
 
             MessageBox.Show($"Your number is {Enum.GetName(typeof(PrimeNumberState), result)}", "Result");
+
+            Busy.Visibility = Visibility.Hidden;
         }
 
         private void Init(NumberState numberState)
@@ -101,7 +141,7 @@ namespace PrimalityTest.Wpf
                         PepinRadio.IsEnabled = true;
                         LucasLehmerRadio.IsEnabled = false;
                         PepinText.Text += "(recommend)";
-                        options.Type = PrimalityTestType.Pepin;
+                        _options.Type = PrimalityTestType.Pepin;
                     }
                     break;
                 case NumberState.Mersenne:
@@ -109,7 +149,7 @@ namespace PrimalityTest.Wpf
                         PepinRadio.IsEnabled = false;
                         LucasLehmerRadio.IsEnabled = true;
                         LucasLehmerText.Text += "(recommend)";
-                        options.Type = PrimalityTestType.LucasLehmer;
+                        _options.Type = PrimalityTestType.LucasLehmer;
                     }
                     break;
                 case NumberState.Proth:
@@ -117,15 +157,17 @@ namespace PrimalityTest.Wpf
                         PepinRadio.IsEnabled = false;
                         LucasLehmerRadio.IsEnabled = false;
 
-                        var result = MessageBox.Show("This number is a Proth number, " +
-                            "so best best primality test for you is Proth test.",
-                            "Result", MessageBoxButton.OK);
+                        MessageBox.Show("This number is a Proth number, " +
+                                        "so best best primality test for you is Proth test.",
+                                        "Result", MessageBoxButton.OK);
                     }
                     break;
                 case NumberState.None:
                     PepinRadio.IsEnabled = false;
                     LucasLehmerRadio.IsEnabled = false;
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(numberState), numberState, null);
             }
         }
 
@@ -137,7 +179,7 @@ namespace PrimalityTest.Wpf
                 return -1;
             }
 
-            if (!int.TryParse(IterationsTextBox.Text, out int k))
+            if (!int.TryParse(IterationsTextBox.Text, out var k))
             {
                 MessageBox.Show("Incorrect iterations count input");
                 return -1;

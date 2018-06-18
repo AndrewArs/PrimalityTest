@@ -1,10 +1,12 @@
 ﻿using PrimalityTest.Core.Enums;
 using System;
 using System.Numerics;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PrimalityTest.Core.PrimalitTests.DeterministicTests
 {
-    public class AKSTest
+    public class AksTest
     {
         /***************************************************************************
         * The algorithm is -
@@ -29,33 +31,40 @@ namespace PrimalityTest.Core.PrimalitTests.DeterministicTests
         *      e. return PRIME
         */
 
-        private static int log;
-        private static bool[] sieveArray;
+        private static int _log;
+        private static bool[] _sieveArray;
         private const int SieveEratosSize = 100000000;
 
         /* aks constructor */
-        static AKSTest()
+        static AksTest()
         {
             SieveEratos();
         }
 
-        /* function to check if a given number is prime or not */
-        public static PrimeNumberState IsPrime(BigInteger n)
+        public static async Task<PrimeNumberState> IsPrime(BigInteger n, CancellationToken token)
         {
-            BigInteger lowR, powOf, x, leftH, rightH, fm, aBigNum;
-            int totR, quot, tm, aCounter, aLimit, divisor;
-            log = (int)LogBigNum(n);
+            return await Task.Run(() => PrimeTest(n, token), token);
+        }
 
-            if (FindPower(n, log))
+        /* function to check if a given number is prime or not */
+        public static PrimeNumberState PrimeTest(BigInteger n, CancellationToken token)
+        {
+            BigInteger lowR, powOf, x, leftH, rightH, aBigNum;
+            int quot, tm, aCounter, divisor;
+            _log = (int)LogBigNum(n);
+
+            if (FindPower(n, _log))
             {
                 return PrimeNumberState.Composite;
             }
 
             x = lowR;
-            totR = 2;
+            var totR = 2;
 
             for (lowR = 2; lowR.CompareTo(n) < 0; lowR = BigInteger.Add(lowR, BigInteger.One))
             {
+                token.ThrowIfCancellationRequested();
+
                 if (BigInteger.GreatestCommonDivisor(lowR, n).CompareTo(BigInteger.One) != 0)
                 {
                     return PrimeNumberState.Composite;
@@ -67,7 +76,7 @@ namespace PrimalityTest.Core.PrimalitTests.DeterministicTests
                 {
                     quot = LargestFactor(totR - 1);
                     divisor = (totR - 1) / quot;
-                    tm = (int)(4 * (Math.Sqrt(totR)) * log);
+                    tm = (int)(4 * (Math.Sqrt(totR)) * _log);
                     powOf = MPower(n, new BigInteger(divisor), lowR);
                     if (quot >= tm && (powOf.CompareTo(BigInteger.One)) != 0)
                     {
@@ -76,11 +85,12 @@ namespace PrimalityTest.Core.PrimalitTests.DeterministicTests
                 }
             }
 
-            fm = BigInteger.Subtract((MPower(x, lowR, n)), BigInteger.One);
-            aLimit = (int)(2 * Math.Sqrt(totR) * log);
+            var aLimit = (int)(2 * Math.Sqrt(totR) * _log);
 
             for (aCounter = 1; aCounter < aLimit; aCounter++)
             {
+                token.ThrowIfCancellationRequested();
+
                 aBigNum = new BigInteger(aCounter);
                 leftH = (MPower(BigInteger.Subtract(x, aBigNum), n, n)) % n;
                 rightH = (BigInteger.Subtract(MPower(x, n, n), aBigNum)) % n;
@@ -97,40 +107,27 @@ namespace PrimalityTest.Core.PrimalitTests.DeterministicTests
         /* function that computes the log of a big number*/
         private static double LogBigNum(BigInteger bNum)
         {
-            string str;
-            int len;
-            double num1, num2;
-            str = "0," + bNum.ToString();
-            len = str.Length - 1;
-            num1 = Double.Parse(str);
-            num2 = Math.Log10(num1) + len;
+            var str = "0," + bNum;
+            var len = str.Length - 1;
+            var num1 = double.Parse(str);
+            var num2 = Math.Log10(num1) + len;
 
             return num2;
         }
-
-        /*function that computes the log of a big number input in string format*/
-        private static double LogBigNum(string str)
-        {
-            string s;
-            int len;
-            double num1, num2;
-            len = str.Length;
-            s = "0," + str;
-            num1 = Double.Parse(s);
-            num2 = Math.Log10(num1) + len;
-
-            return num2;
-        }
-
+        
         /* function to compute the largest factor of a number */
         private static int LargestFactor(int num)
         {
-            int i;
-            i = num;
-            if (i == 1) return i;
+            var i = num;
+
+            if (i == 1)
+            {
+                return i;
+            }
+
             while (i > 1)
             {
-                while (sieveArray[i] == true)
+                while (_sieveArray[i])
                 {
                     i--;
                 }
@@ -140,6 +137,7 @@ namespace PrimalityTest.Core.PrimalitTests.DeterministicTests
                 }
                 i--;
             }
+
             return num;
         }
 
@@ -147,13 +145,11 @@ namespace PrimalityTest.Core.PrimalitTests.DeterministicTests
         /*function given a and b, computes if a is power of b */
         private static bool FindPowerOf(BigInteger bNum, int val)
         {
-            int l;
-            double len;
             BigInteger low, high, mid, res;
             low = new BigInteger(10);
             high = new BigInteger(10);
-            len = (bNum.ToString().Length) / val;
-            l = (int)Math.Ceiling(len); 
+            var len = (bNum.ToString().Length) / Convert.ToDouble(val);
+            var l = (int)Math.Ceiling(len); 
             low = BigInteger.Pow(low, l - 1);
             high = BigInteger.Subtract(BigInteger.Pow(high, l), BigInteger.One);
 
@@ -185,43 +181,13 @@ namespace PrimalityTest.Core.PrimalitTests.DeterministicTests
          */
         private static bool IsSievePrime(int val)
         {
-            if (sieveArray[val] == false)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        private static long MPower(long x, long y, long n)
-        {
-            long m, p, z;
-            m = y;
-            p = 1;
-            z = x;
-
-            while (m > 0)
-            {
-                while (m % 2 == 0)
-                {
-                    m = m / 2;
-                    z = (z * z) % n;
-                }
-                m = m - 1;
-                p = (p * z) % n;
-            }
-
-            return p;
+            return _sieveArray[val] == false;
         }
 
         /* function, given a and b computes if a is a power of b */
         private static bool FindPower(BigInteger n, int l)
         {
-            int i;
-
-            for (i = 2; i < l; i++)
+            for (var i = 2; i < l; i++)
             {
                 if (FindPowerOf(n, i))
                 {
@@ -234,21 +200,18 @@ namespace PrimalityTest.Core.PrimalitTests.DeterministicTests
 
         private static BigInteger MPower(BigInteger x, BigInteger y, BigInteger n)
         {
-            BigInteger m, p, z, two;
-            m = y;
-            p = BigInteger.One;
-            z = x;
-            two = new BigInteger(2);
+            var p = BigInteger.One;
+            var two = new BigInteger(2);
 
-            while (m.CompareTo(BigInteger.Zero) > 0)
+            while (y.CompareTo(BigInteger.Zero) > 0)
             {
-                while ((m % two).CompareTo(BigInteger.Zero) == 0)
+                while ((y % two).CompareTo(BigInteger.Zero) == 0)
                 {
-                    m = BigInteger.Divide(m, two);
-                    z = BigInteger.Multiply(z, z) % n;
+                    y = BigInteger.Divide(y, two);
+                    x = BigInteger.Multiply(x, x) % n;
                 }
-                m = BigInteger.Subtract(m, BigInteger.One);
-                p = BigInteger.Multiply(p, z) % n;
+                y = BigInteger.Subtract(y, BigInteger.One);
+                p = BigInteger.Multiply(p, x) % n;
             }
 
             return p;
@@ -272,17 +235,16 @@ namespace PrimalityTest.Core.PrimalitTests.DeterministicTests
          */
         private static void SieveEratos()
         {
-            int i, j;
-            sieveArray = new bool[SieveEratosSize + 1];
-            sieveArray[1] = true;
+            _sieveArray = new bool[SieveEratosSize + 1];
+            _sieveArray[1] = true;
 
-            for (i = 2; i * i <= SieveEratosSize; i++)
+            for (var i = 2; i * i <= SieveEratosSize; i++)
             {
-                if (sieveArray[i] != true)
+                if (_sieveArray[i] != true)
                 {
-                    for (j = i * i; j <= SieveEratosSize; j += i)
+                    for (var j = i * i; j <= SieveEratosSize; j += i)
                     {
-                        sieveArray[j] = true;
+                        _sieveArray[j] = true;
                     }
                 }
             }

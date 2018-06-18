@@ -7,7 +7,7 @@ namespace PrimalityTest.Wpf
     /// <summary>
     /// Логика взаимодействия для MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
         public MainWindow()
         {
@@ -18,7 +18,7 @@ namespace PrimalityTest.Wpf
 
         private void AnalysButton_Click(object sender, RoutedEventArgs e)
         {
-            if(!BigInteger.TryParse(NumberInput.Text, out BigInteger number))
+            if(!BigInteger.TryParse(NumberInput.Text, out var number))
             {
                 var result = MessageBox.Show("Incorrect input!", "Error", MessageBoxButton.OK);
 
@@ -30,9 +30,11 @@ namespace PrimalityTest.Wpf
                 return;
             }
 
+            Busy.Visibility = Visibility.Visible;
             var primeResult = NumbersAnalys.AnalysNumber(number);
 
             var window = new PrimalityTestChoose(primeResult, number);
+            Busy.Visibility = Visibility.Hidden;
 
             window.ShowDialog();
         }

@@ -1,43 +1,52 @@
 ﻿using PrimalityTest.Core.Enums;
 using System;
 using System.Numerics;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PrimalityTest.Core.PrimalitTests.ProbabilisticTests
 {
     public class RabinMiller
     {
-        private static BigInteger ZERO = BigInteger.Zero;
-        private static BigInteger ONE = BigInteger.One;
-        private static BigInteger TWO = new BigInteger(2);
-        private static BigInteger THREE = new BigInteger(3);
+        private static readonly BigInteger Zero = BigInteger.Zero;
+        private static readonly BigInteger One = BigInteger.One;
+        private static readonly BigInteger Two = new BigInteger(2);
+        private static readonly BigInteger Three = new BigInteger(3);
 
-        public static PrimeNumberState IsPrime(BigInteger n, int k)
+        public static async Task<PrimeNumberState> IsPrime(BigInteger number, int iterations, CancellationToken token)
         {
-            if (n.CompareTo(ONE) == 0)
+            return await Task.Run(() => PrimeTest(number, iterations, token), token);
+        }
+
+        public static PrimeNumberState PrimeTest(BigInteger number, int iterations, CancellationToken token)
+        {
+            if (number.CompareTo(One) == 0)
             {
                 return PrimeNumberState.Composite;
             }
 
-            if (n.CompareTo(THREE) < 0)
+            if (number.CompareTo(Three) < 0)
             {
                 return PrimeNumberState.Prime;
             }
 
             var s = 0;
-            var d = BigInteger.Subtract(n, ONE);
+            var d = BigInteger.Subtract(number, One);
 
-            while ((d % TWO).Equals(ZERO))
+            while ((d % Two).Equals(Zero))
             {
                 s++;
-                d = BigInteger.Divide(d, TWO);
+                d = BigInteger.Divide(d, Two);
             }
 
-            for (int i = 0; i < k; i++)
+            for (var i = 0; i < iterations; i++)
             {
-                var a = UniformRandom(TWO, BigInteger.Subtract(n, ONE));
-                var x = BigInteger.ModPow(a, d, n);
+                token.ThrowIfCancellationRequested();
 
-                if (x.Equals(ONE) || x.Equals(BigInteger.Subtract(n, ONE)))
+                var a = UniformRandom(Two, BigInteger.Subtract(number, One));
+                var x = BigInteger.ModPow(a, d, number);
+
+                if (x.Equals(One) || x.Equals(BigInteger.Subtract(number, One)))
                 {
                     continue;
                 }
@@ -45,14 +54,16 @@ namespace PrimalityTest.Core.PrimalitTests.ProbabilisticTests
                 var r = 0;
                 for (; r < s; r++)
                 {
-                    x = BigInteger.ModPow(x, TWO, n);
+                    token.ThrowIfCancellationRequested();
 
-                    if (x.Equals(ONE))
+                    x = BigInteger.ModPow(x, Two, number);
+
+                    if (x.Equals(One))
                     {
                         return PrimeNumberState.Composite;
                     }
 
-                    if (x.Equals(BigInteger.Subtract(n, ONE)))
+                    if (x.Equals(BigInteger.Subtract(number, One)))
                     {
                         break;
                     }
@@ -68,7 +79,6 @@ namespace PrimalityTest.Core.PrimalitTests.ProbabilisticTests
 
         private static BigInteger UniformRandom(BigInteger bottom, BigInteger top)
         {
-            var rnd = new Random();
             BigInteger res;
 
             do
@@ -79,20 +89,20 @@ namespace PrimalityTest.Core.PrimalitTests.ProbabilisticTests
             return res;
         }
 
-        private static BigInteger RandomIntegerBelow(BigInteger N)
+        private static BigInteger RandomIntegerBelow(BigInteger n)
         {
             var random = new Random();
-            byte[] bytes = N.ToByteArray();
-            BigInteger R;
+            var bytes = n.ToByteArray();
+            BigInteger r;
 
             do
             {
                 random.NextBytes(bytes);
                 bytes[bytes.Length - 1] &= 0x7F; //force sign bit to positive
-                R = new BigInteger(bytes);
-            } while (R >= N);
+                r = new BigInteger(bytes);
+            } while (r >= n);
 
-            return R;
+            return r;
         }
     }
 }

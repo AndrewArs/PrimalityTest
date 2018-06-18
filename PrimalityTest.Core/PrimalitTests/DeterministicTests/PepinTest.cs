@@ -24,7 +24,7 @@ namespace PrimalityTest.Core.PrimalitTests.DeterministicTests
                 throw new Exception("It is not a fermat number!");
             }
 
-            if (!int.TryParse(BigInteger.Divide(BigInteger.Subtract(number, 1), 2).ToString(), out int exp))
+            if (!int.TryParse(BigInteger.Divide(BigInteger.Subtract(number, 1), 2).ToString(), out var exp))
             {
                 throw new Exception("Can't parse to int");
             }
@@ -33,12 +33,7 @@ namespace PrimalityTest.Core.PrimalitTests.DeterministicTests
 
             var remainder = BigInteger.Remainder(sub, number);
 
-            if (remainder == 0)
-            {
-                return PrimeNumberState.Prime;
-            }
-
-            return PrimeNumberState.Composite;
+            return remainder == 0 ? PrimeNumberState.Prime : PrimeNumberState.Composite;
         }
     }
 }

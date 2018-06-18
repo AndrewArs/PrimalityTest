@@ -1,26 +1,35 @@
 ﻿using PrimalityTest.Core.Enums;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PrimalityTest.Core.PrimalitTests.ProbabilisticTests
 {
     public static class SolovayStrassen
     {
-        /** Function to check if prime or not **/
-        public static PrimeNumberState IsPrime(long n, int iteration)
+        public static async Task<PrimeNumberState> IsPrime(long number, int iterations, CancellationToken token)
         {
-            if (n % 2 == 0)
+            return await Task.Run(() => PrimeTest(number, iterations, token), token);
+        }
+
+        /** Function to check if prime or not **/
+        private static PrimeNumberState PrimeTest(long number, int iterations, CancellationToken token)
+        {
+            if (number % 2 == 0)
             {
-                return n == 2 ? PrimeNumberState.Prime : PrimeNumberState.Composite;
+                return number == 2 ? PrimeNumberState.Prime : PrimeNumberState.Composite;
             }
 
             var rand = new Random();
 
-            for (var i = 0; i < iteration; i++)
+            for (var i = 0; i < iterations; i++)
             {
+                token.ThrowIfCancellationRequested();
+
                 long r = Math.Abs(rand.Next());
-                long a = r % (n - 1) + 1;
-                long jacobian = (n + Jacobi(a, n)) % n;
-                long mod = ModPow(a, (n - 1) / 2, n);
+                var a = r % (number - 1) + 1;
+                var jacobian = (number + Jacobi(a, number)) % number;
+                var mod = ModPow(a, (number - 1) / 2, number);
 
                 if (jacobian == 0 || mod != jacobian)
                 {
@@ -73,12 +82,7 @@ namespace PrimalityTest.Core.PrimalitTests.ProbabilisticTests
                 a %= b;
             }
 
-            if (b == 1)
-            {
-                return j;
-            }
-
-            return 0;
+            return b == 1 ? j : 0;
         }
 
         /** Function to calculate (a ^ b) % c **/

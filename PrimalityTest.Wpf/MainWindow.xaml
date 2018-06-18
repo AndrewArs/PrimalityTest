@@ -9,7 +9,7 @@
     <Grid>
         <Label Content="Input your number here:" HorizontalAlignment="Left" Margin="37,24,0,0" VerticalAlignment="Top" Width="145"/>
         <TextBox x:Name="NumberInput" HorizontalAlignment="Left" Height="81" Margin="37,55,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="286"/>
-        <Button x:Name="AnalysButton" Content="Analys" HorizontalAlignment="Left" Margin="84,171,0,0" VerticalAlignment="Top" Width="193"/>
+        <Button x:Name="AnalysButton" Content="Analysis" HorizontalAlignment="Left" Margin="84,171,0,0" VerticalAlignment="Top" Width="193"/>
         <userControls:BusyAnimation x:Name="Busy" Visibility="Hidden" />
     </Grid>
 </Window>

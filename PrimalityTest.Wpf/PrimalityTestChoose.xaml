@@ -7,7 +7,7 @@
         xmlns:src="clr-namespace:PrimalityTest.Wpf.Enums"
         xmlns:userControls="clr-namespace:PrimalityTest.Wpf.UserControls"
         mc:Ignorable="d"
-        Title="PrimalityTestChoose" Height="246" Width="473">
+        Title="PrimalityTestChoose" Height="210.857" Width="478.549">
     <Window.Resources>
         <converters:RadioButtonCheckedConverter x:Key="RadioButtonCheckedConverter" />
     </Window.Resources>
@@ -62,22 +62,22 @@
                 </StackPanel>
             </GroupBox>
             <Button x:Name="TestButton" 
-                Content="Test" 
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Grid.Row="3"
-                Grid.Column="0" 
-                Width="100" />
+                    Content="Test" 
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Grid.Row="3"
+                    Grid.Column="0" 
+                    Width="100" />
             <Button x:Name="CancelButton" 
-                Content="Cancel" 
-                HorizontalAlignment="Center" 
-                VerticalAlignment="Center" 
-                Grid.Row="3"
-                Grid.Column="1"
-                Width="100" />
+                    Content="Cancel" 
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Bottom"
+                    Grid.Row="3"
+                    Grid.Column="1"
+                    Width="100" />
             <TextBox x:Name="IterationsTextBox" HorizontalAlignment="Left" Height="23" Margin="10,5,0,0"
-                 Grid.Row="3" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="120" Grid.Column="1" 
-                 ToolTip="Number of iterations"/>
+                     Grid.Row="3" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="120" Grid.Column="1" 
+                     ToolTip="Number of iterations"/>
         </Grid>
 
         <userControls:BusyAnimation x:Name="Busy" Visibility="Hidden" />
